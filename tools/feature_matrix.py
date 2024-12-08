@@ -18,7 +18,7 @@ UNSUPPORTED = 0x7FFFFFFF
 # Oldest support browser versions.  These have been set somewhat
 # arbitrarily for now.
 # TODO(sbc): Design a of policy for managing these values.
-OLDEST_SUPPORTED_CHROME = 32
+OLDEST_SUPPORTED_CHROME = 33
 OLDEST_SUPPORTED_FIREFOX = 34
 OLDEST_SUPPORTED_SAFARI = 90000
 # 10.19.0 is the oldest version of node that we do any testing with.
@@ -39,6 +39,8 @@ class Feature(IntEnum):
 
 
 default_features = {Feature.SIGN_EXT, Feature.MUTABLE_GLOBALS}
+disable_override_features = set()
+enable_override_features = set()
 
 min_browser_versions = {
   Feature.NON_TRAPPING_FPTOINT: {
@@ -93,6 +95,11 @@ min_browser_versions = {
 
 
 def caniuse(feature):
+  if feature in disable_override_features:
+    return False
+  if feature in enable_override_features:
+    return True
+
   min_versions = min_browser_versions[feature]
 
   def report_missing(setting_name):
@@ -114,10 +121,12 @@ def caniuse(feature):
   return True
 
 
-def enable_feature(feature, reason):
+def enable_feature(feature, reason, override=False):
   """Updates default settings for browser versions such that the given
   feature is available everywhere.
   """
+  if override:
+    enable_override_features.add(feature)
   for name, min_version in min_browser_versions[feature].items():
     name = f'MIN_{name.upper()}_VERSION'
     if settings[name] < min_version:
@@ -130,6 +139,12 @@ def enable_feature(feature, reason):
       else:
         # Otherwise we bump the minimum version to accommodate the feature.
         setattr(settings, name, min_version)
+
+
+def disable_feature(feature):
+  """Allow the user to disable a feature that would otherwise be on by default.
+  """
+  disable_override_features.add(feature)
 
 
 # apply minimum browser version defaults based on user settings. if

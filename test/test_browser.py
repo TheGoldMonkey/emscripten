@@ -812,8 +812,8 @@ If manually bisecting:
     # test()
 
   @also_with_wasmfs
-  def test_dev_random(self):
-    self.btest_exit('filesystem/test_dev_random.c')
+  def test_fs_dev_random(self):
+    self.btest_exit('fs/test_fs_dev_random.c')
 
   def test_sdl_swsurface(self):
     self.btest_exit('test_sdl_swsurface.c', args=['-lSDL', '-lGL'])
@@ -2613,6 +2613,15 @@ Module["preRun"] = () => {
     self.btest_exit('webgl_create_context2.cpp')
 
   @requires_graphics_hardware
+  # Verify bug https://github.com/emscripten-core/emscripten/issues/22943: creating a WebGL context with explicit swap control and offscreenCanvas
+  @parameterized({
+    'offscreencanvas': (['-sOFFSCREENCANVAS_SUPPORT'],),
+    'offscreenframebuffer': (['-sOFFSCREEN_FRAMEBUFFER', '-DUSE_OFFSCREEN_FRAMEBUFFER'],),
+  })
+  def test_html5_webgl_create_context_swapcontrol(self, args):
+    self.btest_exit('browser/webgl_create_context_swapcontrol.c', args=args)
+
+  @requires_graphics_hardware
   # Verify bug https://github.com/emscripten-core/emscripten/issues/4556: creating a WebGL context to Module.canvas without an ID explicitly assigned to it.
   # (this only makes sense in the old deprecated -sDISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0 mode)
   def test_html5_special_event_targets(self):
@@ -4313,22 +4322,22 @@ Module["preRun"] = () => {
 
   # Tests that offscreen framebuffer state restoration works
   @requires_graphics_hardware
-  def test_webgl_offscreen_framebuffer_state_restoration(self):
-    for args in [
-        # full state restoration path on WebGL 1.0
-        ['-sMAX_WEBGL_VERSION', '-sOFFSCREEN_FRAMEBUFFER_FORBID_VAO_PATH'],
-        # VAO path on WebGL 1.0
-        ['-sMAX_WEBGL_VERSION'],
-        ['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=0'],
-        # VAO path on WebGL 2.0
-        ['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=1', '-DTEST_REQUIRE_VAO=1'],
-        # full state restoration path on WebGL 2.0
-        ['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=1', '-sOFFSCREEN_FRAMEBUFFER_FORBID_VAO_PATH'],
-        # blitFramebuffer path on WebGL 2.0 (falls back to VAO on Firefox < 67)
-        ['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=0'],
-      ]:
-      cmd = args + ['-lGL', '-sOFFSCREEN_FRAMEBUFFER', '-DEXPLICIT_SWAP=1']
-      self.btest_exit('webgl_offscreen_framebuffer_swap_with_bad_state.c', args=cmd)
+  @parameterized({
+    # full state restoration path on WebGL 1.0
+    'gl1_no_vao': (['-sMAX_WEBGL_VERSION=1', '-sOFFSCREEN_FRAMEBUFFER_FORBID_VAO_PATH'],),
+    # VAO path on WebGL 1.0
+    'gl1': (['-sMAX_WEBGL_VERSION=1', '-DTEST_VERIFY_WEBGL1_VAO_SUPPORT=1'],),
+    'gl1_max_gl2': (['-sMAX_WEBGL_VERSION=2'],),
+    # VAO path on WebGL 2.0
+    'gl2': (['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=1'],),
+    # full state restoration path on WebGL 2.0
+    'gl2_no_vao': (['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=1', '-sOFFSCREEN_FRAMEBUFFER_FORBID_VAO_PATH'],),
+    # blitFramebuffer path on WebGL 2.0 (falls back to VAO on Firefox < 67)
+    'gl2_no_aa': (['-sMAX_WEBGL_VERSION=2', '-DTEST_WEBGL2=1', '-DTEST_ANTIALIAS=0'],),
+  })
+  def test_webgl_offscreen_framebuffer_state_restoration(self, args, skip_vao=False):
+    cmd = args + ['-lGL', '-sOFFSCREEN_FRAMEBUFFER', '-DEXPLICIT_SWAP=1']
+    self.btest_exit('webgl_offscreen_framebuffer_swap_with_bad_state.c', args=cmd)
 
   @parameterized({
     '': ([],),
@@ -4939,8 +4948,12 @@ Module["preRun"] = () => {
   def test_minimal_runtime_hello_world(self, args):
     self.btest_exit('small_hello_world.c', args=args + ['-sMINIMAL_RUNTIME'])
 
-  def test_offset_converter(self, *args):
-    self.btest_exit('test_offset_converter.c', assert_returncode=1, args=['-sUSE_OFFSET_CONVERTER', '-gsource-map', '-sPROXY_TO_PTHREAD', '-pthread'])
+  @parameterized({
+    '': ([],),
+    'pthread': (['-sPROXY_TO_PTHREAD', '-pthread'],)
+  })
+  def test_offset_converter(self, args):
+    self.btest_exit('test_offset_converter.c', args=['-sUSE_OFFSET_CONVERTER', '-gsource-map'] + args)
 
   # Tests emscripten_unwind_to_js_event_loop() behavior
   def test_emscripten_unwind_to_js_event_loop(self, *args):

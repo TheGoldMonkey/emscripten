@@ -142,7 +142,7 @@ def also_with_wasmfs_all_backends(f):
   return metafunc
 
 
-def requires_tool(tool):
+def requires_tool(tool, env_name=None):
   assert not callable(tool)
 
   def decorate(func):
@@ -150,11 +150,15 @@ def requires_tool(tool):
 
     @wraps(func)
     def decorated(self, *args, **kwargs):
+      if env_name:
+        env_var = f'EMTEST_SKIP_{env_name}'
+      else:
+        env_var = f'EMTEST_SKIP_{tool.upper()}'
       if not shutil.which(tool):
-        if f'EMTEST_SKIP_{tool.upper()}' in os.environ:
-          self.skipTest(f'test requires ccache and EMTEST_SKIP_{tool.upper()} is set')
+        if env_var in os.environ:
+          self.skipTest(f'test requires ccache and {env_var} is set')
         else:
-          self.fail(f'{tool} required to run this test.  Use EMTEST_SKIP_{tool.upper()} to skip')
+          self.fail(f'{tool} required to run this test.  Use {env_var} to skip')
       return func(self, *args, **kwargs)
 
     return decorated
@@ -170,6 +174,11 @@ def requires_ninja(func):
 def requires_scons(func):
   assert callable(func)
   return requires_tool('scons')(func)
+
+
+def requires_rust(func):
+  assert callable(func)
+  return requires_tool('cargo', 'RUST')(func)
 
 
 def requires_pkg_config(func):
@@ -904,14 +913,18 @@ f.close()
     # would take 10 minutes+ to finish (CMake feature detection is slow), so
     # combine multiple features into one to try to cover as much as possible
     # while still keeping this test in sensible time limit.
-    'js':          ('target_js',      'test_cmake.js',         ['-DCMAKE_BUILD_TYPE=Debug']),
-    'html':        ('target_html',    'hello_world_gles.html', ['-DCMAKE_BUILD_TYPE=Release']),
-    'library':     ('target_library', 'libtest_cmake.a',       ['-DCMAKE_BUILD_TYPE=MinSizeRel']),
-    'static_cpp':  ('target_library', 'libtest_cmake.a',       ['-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DCPP_LIBRARY_TYPE=STATIC']),
-    'stdproperty': ('stdproperty',    'helloworld.js',         []),
-    'post_build':  ('post_build',     'hello.js',              []),
+    'js':            ('target_js',      'test_cmake.js',         ['-DCMAKE_BUILD_TYPE=Debug']),
+    'html':          ('target_html',    'hello_world_gles.html', ['-DCMAKE_BUILD_TYPE=Release']),
+    'library':       ('target_library', 'libtest_cmake.a',       ['-DCMAKE_BUILD_TYPE=MinSizeRel']),
+    'static_cpp':    ('target_library', 'libtest_cmake.a',       ['-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DCPP_LIBRARY_TYPE=STATIC']),
+    'whole_archive': ('whole_archive',  'whole.js',              []),
+    'stdproperty':   ('stdproperty',    'helloworld.js',         []),
+    'post_build':    ('post_build',     'hello.js',              []),
   })
   def test_cmake(self, test_dir, output_file, cmake_args):
+    if test_dir == 'whole_archive' and 'EMTEST_SKIP_NEW_CMAKE' in os.environ:
+      self.skipTest('EMTEST_SKIP_NEW_CMAKE set')
+
     # Test all supported generators.
     if WINDOWS:
       generators = ['MinGW Makefiles', 'NMake Makefiles']
@@ -1263,6 +1276,10 @@ f.close()
     self.assertContained('error: --stack-first is not compatible with asan', err)
     err = self.expect_fail(cmd + ['-sGLOBAL_BASE=1024'])
     self.assertContained('error: --stack-first is not compatible with -sGLOBAL_BASE', err)
+
+  def test_side_module_global_base(self):
+    err = self.expect_fail([EMCC, test_file('hello_world.c'), '-Werror', '-sGLOBAL_BASE=1024', '-sSIDE_MODULE'])
+    self.assertContained('emcc: error: GLOBAL_BASE is not compatible with SIDE_MODULE', err)
 
   @parameterized({
     # In a simple -O0 build we do not set --low-memory-unused (as the stack is
@@ -3380,21 +3397,28 @@ More info: https://emscripten.org
     self.do_runf('other/test_jspi_add_function.c', 'done')
 
   @parameterized({
-    '': [[]],
-    'with_jsgen': [['-sEMBIND_AOT']]
+    'commonjs': [['-sMODULARIZE'], ['--module', 'commonjs', '--moduleResolution', 'node']],
+    'esm': [['-sEXPORT_ES6'], ['--module', 'NodeNext', '--moduleResolution', 'nodenext']],
+    'esm_with_jsgen': [['-sEXPORT_ES6', '-sEMBIND_AOT'], ['--module', 'NodeNext', '--moduleResolution', 'nodenext']]
   })
-  def test_embind_tsgen(self, opts):
+  def test_embind_tsgen_end_to_end(self, opts, tsc_opts):
     # Check that TypeScript generation works and that the program is runs as
     # expected.
-    self.do_runf('other/embind_tsgen.cpp', 'main ran',
-                 emcc_args=['-lembind', '--emit-tsd', 'embind_tsgen.d.ts'] + opts)
+    self.emcc(test_file('other/embind_tsgen.cpp'),
+              ['-o', 'embind_tsgen.js', '-lembind', '--emit-tsd', 'embind_tsgen.d.ts'] + opts)
 
     # Test that the output compiles with a TS file that uses the defintions.
-    cmd = shared.get_npm_cmd('tsc') + ['embind_tsgen.d.ts', '--noEmit']
-    shared.check_call(cmd)
+    shutil.copyfile(test_file('other/embind_tsgen_main.ts'), 'main.ts')
+    if '-sEXPORT_ES6' in opts:
+      # A package file with type=module is needed to enabled ES modules in TSC and
+      # also run the output JS file as a module in node.
+      shutil.copyfile(test_file('other/embind_tsgen_package.json'), 'package.json')
 
+    cmd = shared.get_npm_cmd('tsc') + ['embind_tsgen.d.ts', 'main.ts', '--target', 'es2021'] + tsc_opts
+    shared.check_call(cmd)
     actual = read_file('embind_tsgen.d.ts')
-    self.assertFileContents(test_file('other/embind_tsgen.d.ts'), actual)
+    self.assertFileContents(test_file('other/embind_tsgen_module.d.ts'), actual)
+    self.assertContained('main ran\nts ran', self.run_js('main.js'))
 
   def test_embind_tsgen_ignore(self):
     create_file('fail.js', 'assert(false);')
@@ -4898,6 +4922,7 @@ int main() {
     # legacy + disabling wasm works
     test('hello, world!', ['-sLEGACY_VM_SUPPORT', '-sWASM=0'])
 
+  @crossplatform
   def test_on_abort(self):
     expected_output = 'Module.onAbort was called'
 
@@ -6072,8 +6097,16 @@ int main() {
     ''')
     self.run_process([EMXX, 'src.cpp', '-O2', '-sSAFE_HEAP'])
 
-  def test_bad_lookup(self):
-    self.do_runf(path_from_root('test/filesystem/bad_lookup.cpp'), expected_output='ok')
+  @also_with_wasmfs
+  @also_with_noderawfs
+  @crossplatform
+  def test_fs_bad_lookup(self):
+    self.do_runf(path_from_root('test/fs/test_fs_bad_lookup.c'), expected_output='ok')
+
+  @also_with_wasmfs
+  @also_with_noderawfs
+  def test_fs_dev_random(self):
+    self.do_runf('fs/test_fs_dev_random.c', 'success')
 
   @parameterized({
     'none': [{'EMCC_FORCE_STDLIBS': None}, False],
@@ -6171,6 +6204,10 @@ int main()
   @crossplatform
   def test_strftime(self):
     self.do_other_test('test_strftime.c')
+
+  @crossplatform
+  def test_wcsftime(self):
+    self.do_other_test('test_wcsftime.c')
 
   @crossplatform
   def test_strftime_zZ(self):
@@ -10425,23 +10462,37 @@ int main() {
     verify_features_sec('multivalue', True)
     verify_features_sec('reference-types', True)
 
+    # Disable a feature
+    compile(['-mno-sign-ext', '-c'])
+    verify_features_sec('sign-ext', False)
+    # Disabling overrides default browser versions
+    compile(['-mno-sign-ext'])
+    verify_features_sec_linked('sign-ext', False)
+    # Disabling overrides manual browser versions
+    compile(['-sMIN_SAFARI_VERSION=150000', '-mno-sign-ext'])
+    # Disable via browser selection
+    compile(['-sMIN_FIREFOX_VERSION=61'])
+    verify_features_sec_linked('sign-ext', False)
+    # Manual enable overrides browser version
+    compile(['-sMIN_FIREFOX_VERSION=61', '-msign-ext'])
+    verify_features_sec_linked('sign-ext', True)
+
     compile(['-mnontrapping-fptoint', '-c'])
     verify_features_sec('nontrapping-fptoint', True)
 
-    # BIGINT causes binaryen to not run, and keeps the target_features section after link
     # Setting this SAFARI_VERSION should enable bulk memory because it links in emscripten_memcpy_bulkmem
     # However it does not enable nontrapping-fptoint yet because it has no effect at compile time and
     # no libraries include nontrapping yet.
-    compile(['-sMIN_SAFARI_VERSION=150000', '-sWASM_BIGINT'])
+    compile(['-sMIN_SAFARI_VERSION=150000'])
     verify_features_sec_linked('sign-ext', True)
     verify_features_sec_linked('mutable-globals', True)
     verify_features_sec_linked('multivalue', True)
     verify_features_sec_linked('bulk-memory', True)
     verify_features_sec_linked('nontrapping-fptoint', False)
 
-    compile(['-sMIN_SAFARI_VERSION=150000', '-mno-bulk-memory', '-sWASM_BIGINT'])
-    # FIXME? -mno-bulk-memory at link time does not override MIN_SAFARI_VERSION. it probably should?
-    verify_features_sec_linked('bulk-memory', True)
+    compile(['-sMIN_SAFARI_VERSION=150000', '-mno-bulk-memory'])
+    # -mno-bulk-memory at link time overrides MIN_SAFARI_VERSION
+    verify_features_sec_linked('bulk-memory', False)
 
   def test_js_preprocess(self):
     # Use stderr rather than stdout here because stdout is redirected to the output JS file itself.
@@ -12385,29 +12436,6 @@ Aborted(`Module.arguments` has been replaced by `arguments_` (the initial value 
       self.assertContained(expected, self.run_js('test.wasm', engine))
 
   @parameterized({
-    'wasm2js': (['-sWASM=0'],),
-    'modularize': (['-sMODULARIZE', '--extern-post-js', test_file('modularize_post_js.js')],),
-  })
-  def test_promise_polyfill(self, constant_args):
-    def test(args, expect_fail):
-      # legacy browsers may lack Promise, which wasm2js depends on. see what
-      # happens when we kill the global Promise function.
-      self.run_process([EMCC, test_file('hello_world.c')] + constant_args + args)
-      js = read_file('a.out.js')
-      create_file('a.out.js', 'Promise = undefined;\n' + js)
-      return self.run_js('a.out.js', assert_returncode=NON_ZERO if expect_fail else 0)
-
-    # we fail without legacy support
-    test([], expect_fail=True)
-
-    # but work with it
-    output = test(['-sLEGACY_VM_SUPPORT'], expect_fail=False)
-    self.assertContained('hello, world!', output)
-
-    # unless we explicitly disable polyfills
-    test(['-sLEGACY_VM_SUPPORT', '-sNO_POLYFILL'], expect_fail=True)
-
-  @parameterized({
     '': ([],),
     'assertions': (['-sASSERTIONS'],),
     'closure': (['-sASSERTIONS', '--closure=1'],),
@@ -13118,7 +13146,6 @@ exec "$@"
     self.do_run_in_out_file_test('hello_world.c', emcc_args=['-Oz'])
 
   def test_runtime_keepalive(self):
-    self.uses_es6 = True
     # Depends on Module['onExit']
     self.set_setting('EXIT_RUNTIME')
     self.do_other_test('test_runtime_keepalive.cpp')
@@ -13895,7 +13922,6 @@ myMethod: 43
 
     create_file('test.c', 'extern void foo(); int main() { foo(); }')
     self.emcc_args += ['--js-library', 'es6_library.js']
-    self.uses_es6 = True
 
     def check_for_es6(filename, expect):
       js = read_file(filename)
@@ -15224,7 +15250,7 @@ addToLibrary({
 
   def test_browser_too_old(self):
     err = self.expect_fail([EMCC, test_file('hello_world.c'), '-sMIN_CHROME_VERSION=10'])
-    self.assertContained('emcc: error: MIN_CHROME_VERSION older than 32 is not supported', err)
+    self.assertContained('emcc: error: MIN_CHROME_VERSION older than 33 is not supported', err)
 
   def test_js_only_settings(self):
     err = self.run_process([EMCC, test_file('hello_world.c'), '-o', 'foo.wasm', '-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=emscripten_get_heap_max'], stderr=PIPE).stderr
@@ -15360,3 +15386,40 @@ addToLibrary({
 
   def test_embool(self):
     self.do_other_test('test_embool.c')
+
+  @requires_rust
+  def test_rust_integration_basics(self):
+    shutil.copytree(test_file('rust/basics'), 'basics')
+    self.run_process(['cargo', 'build', '--target=wasm32-unknown-emscripten'], cwd='basics')
+    lib = 'basics/target/wasm32-unknown-emscripten/debug/libbasics.a'
+    self.assertExists(lib)
+
+    create_file('main.cpp', '''
+    extern "C" void say_hello();
+    int main() {
+       say_hello();
+       return 0;
+    }''')
+    self.do_runf('main.cpp', 'Hello from rust!', emcc_args=[lib])
+
+  @crossplatform
+  def test_create_cache_directory(self):
+    if config.FROZEN_CACHE:
+      self.skipTest("test doesn't work with frozen cache")
+
+    # Test that the cache directory (including parent directories) is
+    # created on demand.
+    with env_modify({'EM_CACHE': os.path.abspath('foo/bar')}):
+      self.run_process([EMCC, '-c', test_file('hello_world.c')])
+      self.assertExists('foo/bar/sysroot_install.stamp')
+
+    if not WINDOWS:
+      # Test that we generate a nice error when we cannot create the cache
+      # because it is in a read-only location.
+      # For some reason this doesn't work on windows, at least not in CI.
+      os.mkdir('rodir')
+      os.chmod('rodir', 0o444)
+      self.assertFalse(os.access('rodir', os.W_OK))
+      with env_modify({'EM_CACHE': os.path.abspath('rodir/foo')}):
+        err = self.expect_fail([EMCC, '-c', test_file('hello_world.c')])
+        self.assertContained('emcc: error: unable to create cache directory', err)
