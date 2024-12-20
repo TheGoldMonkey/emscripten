@@ -41,15 +41,29 @@
 // Defining _LIBCXXABI_FORGIVING_DYNAMIC_CAST does not help since can_catch() calls
 // is_equal() with use_strcmp=false so the string names are not compared.
 
-#include <cstdint>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <string.h>
 
-#ifdef _LIBCXXABI_FORGIVING_DYNAMIC_CAST
 #include "abort_message.h"
+
+#ifdef _LIBCXXABI_FORGIVING_DYNAMIC_CAST
 #include <sys/syslog.h>
 #include <atomic>
 #endif
+
+#if __has_feature(ptrauth_calls)
+#include <ptrauth.h>
+#endif
+
+template <typename T>
+static inline T* strip_vtable(T* vtable) {
+#if __has_feature(ptrauth_calls)
+  vtable = ptrauth_strip(vtable, ptrauth_key_cxx_vtable_pointer);
+#endif
+  return vtable;
+}
 
 static inline
 bool
@@ -102,10 +116,10 @@ void dyn_cast_get_derived_info(derived_object_info* info, const void* static_ptr
         reinterpret_cast<const uint8_t*>(vtable) + offset_to_ti_proxy;
     info->dynamic_type = *(reinterpret_cast<const __class_type_info* const*>(ptr_to_ti_proxy));
 #else
-    void **vtable = *static_cast<void ** const *>(static_ptr);
-    info->offset_to_derived = reinterpret_cast<ptrdiff_t>(vtable[-2]);
-    info->dynamic_ptr = static_cast<const char*>(static_ptr) + info->offset_to_derived;
-    info->dynamic_type = static_cast<const __class_type_info*>(vtable[-1]);
+  void** vtable = strip_vtable(*static_cast<void** const*>(static_ptr));
+  info->offset_to_derived = reinterpret_cast<ptrdiff_t>(vtable[-2]);
+  info->dynamic_ptr = static_cast<const char*>(static_ptr) + info->offset_to_derived;
+  info->dynamic_type = static_cast<const __class_type_info*>(vtable[-1]);
 #endif
 }
 
@@ -470,7 +484,7 @@ __class_type_info::can_catch(const __shim_type_info* thrown_type,
     if (thrown_class_type == 0)
         return false;
     // bullet 2
-    assert(adjustedPtr && "catching a class without an object?");
+    _LIBCXXABI_ASSERT(adjustedPtr, "catching a class without an object?");
     __dynamic_cast_info info = {thrown_class_type, 0, this, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, true, nullptr};
     info.number_of_dst_type = 1;
     thrown_class_type->has_unambiguous_public_base(&info, adjustedPtr, public_path);
@@ -560,7 +574,7 @@ __base_class_type_info::has_unambiguous_public_base(__dynamic_cast_info* info,
        find the layout.  */
     offset_to_base = __offset_flags >> __offset_shift;
     if (is_virtual) {
-      const char* vtable = *static_cast<const char* const*>(adjustedPtr);
+      const char* vtable = strip_vtable(*static_cast<const char* const*>(adjustedPtr));
       offset_to_base = update_offset_to_base(vtable, offset_to_base);
     }
   } else if (!is_virtual) {
@@ -1500,8 +1514,8 @@ __base_class_type_info::search_above_dst(__dynamic_cast_info* info,
     ptrdiff_t offset_to_base = __offset_flags >> __offset_shift;
     if (__offset_flags & __virtual_mask)
     {
-        const char* vtable = *static_cast<const char*const*>(current_ptr);
-        offset_to_base = update_offset_to_base(vtable, offset_to_base);
+      const char* vtable = strip_vtable(*static_cast<const char* const*>(current_ptr));
+      offset_to_base = update_offset_to_base(vtable, offset_to_base);
     }
     __base_type->search_above_dst(info, dst_ptr,
                                   static_cast<const char*>(current_ptr) + offset_to_base,
@@ -1520,8 +1534,8 @@ __base_class_type_info::search_below_dst(__dynamic_cast_info* info,
     ptrdiff_t offset_to_base = __offset_flags >> __offset_shift;
     if (__offset_flags & __virtual_mask)
     {
-        const char* vtable = *static_cast<const char*const*>(current_ptr);
-        offset_to_base = update_offset_to_base(vtable, offset_to_base);
+      const char* vtable = strip_vtable(*static_cast<const char* const*>(current_ptr));
+      offset_to_base = update_offset_to_base(vtable, offset_to_base);
     }
     __base_type->search_below_dst(info,
                                   static_cast<const char*>(current_ptr) + offset_to_base,
@@ -1530,64 +1544,5 @@ __base_class_type_info::search_below_dst(__dynamic_cast_info* info,
                                       not_public_path,
                                   use_strcmp);
 }
-}  // __cxxabiv1
-
-
-// XXX EMSCRIPTEN
-#ifndef __WASM_EXCEPTIONS__
-
-#include "cxa_exception.h"
-
-namespace __cxxabiv1
-{
-
-// These functions are used by the emscripten-style exception handling
-// mechanism.
-// Note that they need to be included even in the `-noexcept` build of
-// libc++abi to support the case where some parts of a project are built
-// with exception catching enabled, but at link time exception catching
-// is disabled.  In this case dependencies to these functions (and the JS
-// functions which call them) will still exist in the final build.
-extern "C" {
-
-int __cxa_can_catch(__shim_type_info* catchType, __shim_type_info* excpType, void **thrown) {
-  //std::type_info *t1 = static_cast<std::type_info*>(catchType);
-  //std::type_info *t2 = static_cast<std::type_info*>(excpType);
-  //printf("can %s catch %s (%p)?\n", t1->name(), t2->name(), thrown);
-
-  void *temp = *thrown;
-  int ret = catchType->can_catch(excpType, temp);
-  if (ret) *thrown = temp; // apply changes only if we are catching
-  return ret;
-}
-
-static
-inline
-__cxa_exception*
-cxa_exception_from_thrown_object(void* thrown_object)
-{
-    return static_cast<__cxa_exception*>(thrown_object) - 1;
-}
-
-void *__cxa_get_exception_ptr(void *thrown_object) throw() {
-    // Get pointer which is expected to be received by catch clause in C++ code.
-    // It may be adjusted when the pointer is casted to some of the exception
-    // object base classes (e.g. when virtual inheritance is used). When a pointer
-    // is thrown this method should return the thrown pointer itself.
-    // Work around a fastcomp bug, this code is still included for some reason in
-    // a build without exceptions support.
-    __cxa_exception* ex = cxa_exception_from_thrown_object(thrown_object);
-    bool is_pointer = !!dynamic_cast<__pointer_type_info*>(ex->exceptionType);
-    if (is_pointer)
-        return *(void**)thrown_object;
-    if (ex->adjustedPtr)
-        return ex->adjustedPtr;
-    return ex;
-}
-
-}
 
 }  // __cxxabiv1
-
-#endif // !__WASM_EXCEPTIONS__
-

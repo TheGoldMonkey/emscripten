@@ -26,28 +26,19 @@
 #   define _LIBCXXABI_USE_CRASHREPORTER_CLIENT
 #endif
 
-void abort_message(const char* format, ...)
+void __abort_message(const char* format, ...)
 {
     // Write message to stderr. We do this before formatting into a
     // variable-size buffer so that we still get some information if
     // formatting into the variable-sized buffer fails.
 #if !defined(NDEBUG) || !defined(LIBCXXABI_BAREMETAL)
     {
-#if defined(__EMSCRIPTEN__) && defined(NDEBUG)
-        // Just trap in a non-debug build. These internal libcxxabi assertions are
-        // very rare, and it's not worth linking in vfprintf stdio support or
-        // even minimal logging for them, as we'll have a proper call stack, which
-        // will show a call into "abort_message", and can help debugging. (In a
-        // debug build that won't be inlined.)
-        abort();
-#else
         fprintf(stderr, "libc++abi: ");
         va_list list;
         va_start(list, format);
         vfprintf(stderr, format, list);
         va_end(list);
         fprintf(stderr, "\n");
-#endif
     }
 #endif
 

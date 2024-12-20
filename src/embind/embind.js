@@ -125,7 +125,8 @@ var LibraryEmbind = {
       // that routes between the two.
       ensureOverloadTable(Module, name, name);
       if (Module[name].overloadTable.hasOwnProperty(numArguments)) {
-        throwBindingError(`Cannot register multiple overloads of a function with the same number of arguments (${numArguments})!`);
+        console.log(Module[name].overloadTable);
+        throwBindingError(`${name} Cannot register multiple overloads of a function with the same number of arguments (${numArguments})!`);
       }
       // Add the new function into the overload table.
       Module[name].overloadTable[numArguments] = value;
