@@ -1,0 +1,46 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "emcc",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/home/mcvm/dev/emscripten/emcc.py",
+      "console": "integratedTerminal",
+      "args": [
+        "-DBOOST_ALL_NO_LIB=1",
+        "-DBOOST_CONTEXT_EXPORT=\"\"",
+        "-DBOOST_CONTEXT_NO_LIB=\"\"",
+        "-DBOOST_CONTEXT_SOURCE=\"\"",
+        "-DBOOST_CONTEXT_STATIC_LINK=\"\"",
+        "-DBOOST_PLATFORM_CONFIG=\\\"boost/config/platform/wasm.hpp\\\"",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/context/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/assert/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/config/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/core/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/static_assert/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/throw_exception/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/mp11/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/pool/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/integer/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/type_traits/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/winapi/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/predef/include",
+        "-I/home/mcvm/dev/scpp/build/_deps/boost-src/libs/smart_ptr/include",
+        "-w",
+        "-pthread",
+        "-o",
+        "_deps/boost-build/libs/context/CMakeFiles/boost_context.dir/src/asm/ontop_i386_sysv_elf_gas.S.o",
+        "-c",
+        "/home/mcvm/dev/scpp/build/_deps/boost-src/libs/context/src/asm/ontop_i386_sysv_elf_gas.S",
+      ],
+      "cwd": "/home/mcvm/dev/scpp/build",
+      "env": {
+        "EMCC_DEBUG": "1"
+      }
+    }
+  ]
+}
