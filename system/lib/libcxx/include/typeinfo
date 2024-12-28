@@ -56,14 +56,14 @@ public:
 
 */
 
-#include <__assert> // all public C++ headers provide the assertion handler
-#include <__availability>
 #include <__config>
+#include <__cstddef/size_t.h>
 #include <__exception/exception.h>
+#include <__type_traits/integral_constant.h>
 #include <__type_traits/is_constant_evaluated.h>
 #include <__verbose_abort>
-#include <cstddef>
 #include <cstdint>
+#include <version>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
@@ -277,7 +277,20 @@ struct __type_info_implementations {
           __impl;
 };
 
-class _LIBCPP_EXPORTED_FROM_ABI type_info {
+#    if __has_cpp_attribute(_Clang::__ptrauth_vtable_pointer__)
+#      if __has_feature(ptrauth_type_info_vtable_pointer_discrimination)
+#        define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH                                                                  \
+          [[_Clang::__ptrauth_vtable_pointer__(process_independent, address_discrimination, type_discrimination)]]
+#      else
+#        define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH                                                                  \
+          [[_Clang::__ptrauth_vtable_pointer__(                                                                        \
+              process_independent, no_address_discrimination, no_extra_discrimination)]]
+#      endif
+#    else
+#      define _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH
+#    endif
+
+class _LIBCPP_EXPORTED_FROM_ABI _LIBCPP_TYPE_INFO_VTABLE_POINTER_AUTH type_info {
   type_info& operator=(const type_info&);
   type_info(const type_info&);
 
@@ -299,10 +312,7 @@ public:
 
   _LIBCPP_HIDE_FROM_ABI size_t hash_code() const _NOEXCEPT { return __impl::__hash(__type_name); }
 
-  // XXX Emscripten: adding `always_inline` fixes
-  // https://github.com/emscripten-core/emscripten/issues/13330
-  __attribute__((always_inline)) _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 bool
-  operator==(const type_info& __arg) const _NOEXCEPT {
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX23 bool operator==(const type_info& __arg) const _NOEXCEPT {
     // When evaluated in a constant expression, both type infos simply can't come
     // from different translation units, so it is sufficient to compare their addresses.
     if (__libcpp_is_constant_evaluated()) {
@@ -364,8 +374,8 @@ private:
 #endif // defined(_LIBCPP_ABI_VCRUNTIME) && _HAS_EXCEPTIONS == 0
 
 _LIBCPP_BEGIN_NAMESPACE_STD
-_LIBCPP_NORETURN inline _LIBCPP_HIDE_FROM_ABI void __throw_bad_cast() {
-#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
+[[__noreturn__]] inline _LIBCPP_HIDE_FROM_ABI void __throw_bad_cast() {
+#if _LIBCPP_HAS_EXCEPTIONS
   throw bad_cast();
 #else
   _LIBCPP_VERBOSE_ABORT("bad_cast was thrown in -fno-exceptions mode");
@@ -374,6 +384,7 @@ _LIBCPP_NORETURN inline _LIBCPP_HIDE_FROM_ABI void __throw_bad_cast() {
 _LIBCPP_END_NAMESPACE_STD
 
 #if !defined(_LIBCPP_REMOVE_TRANSITIVE_INCLUDES) && _LIBCPP_STD_VER <= 20
+#  include <cstddef>
 #  include <cstdlib>
 #  include <type_traits>
 #endif
