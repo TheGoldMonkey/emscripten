@@ -391,7 +391,9 @@ def get_clang_flags(user_args):
     # Bulk memory may be enabled via threads or directly via -s.
     if not settings.BULK_MEMORY:
       flags.append('-mno-bulk-memory')
-      flags.append('-mno-bulk-memory-opt')
+      # flags.append('-mno-bulk-memory-opt')
+  if '-mnontrapping-fptoint' not in user_args and '-mno-nontrapping-fptoint' not in user_args:
+    flags.append('-mno-nontrapping-fptoint')
 
   if settings.RELOCATABLE and '-fPIC' not in user_args:
     flags.append('-fPIC')
