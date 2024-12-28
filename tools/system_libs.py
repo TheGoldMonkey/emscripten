@@ -1569,7 +1569,7 @@ class libcxxabi(NoExceptLibrary, MTLibrary, DebugLibrary):
       '-D_LIBCPP_BUILDING_LIBRARY',
       '-D_LIBCXXABI_BUILDING_LIBRARY',
       '-DLIBCXXABI_NON_DEMANGLING_TERMINATE',
-      '-std=c++20',
+      '-std=c++26',
     ]
   includes = ['system/lib/libcxx/src']
 
@@ -1595,6 +1595,7 @@ class libcxxabi(NoExceptLibrary, MTLibrary, DebugLibrary):
       cflags.append('-DLIBCXXABI_SILENT_TERMINATE')
     elif self.eh_mode == Exceptions.WASM:
       cflags.append('-D__WASM_EXCEPTIONS__')
+      cflags.append('-Wno-unused-variable')
     return cflags
 
   def get_files(self):
@@ -1646,10 +1647,11 @@ class libcxx(NoExceptLibrary, MTLibrary):
     # by `filesystem/directory_iterator.cpp`: https://reviews.llvm.org/D119670
     '-Wno-unqualified-std-cast-call',
     '-Wno-unknown-warning-option',
-    '-std=c++20',
+    '-std=c++26',
+    '-DLIBC_NAMESPACE=__llvm_libc',
   ]
 
-  includes = ['system/lib/libcxx/src']
+  includes = ['system/lib/libcxx/src', 'system/lib/libc/llvm/include', 'system/lib/libc/llvm']
 
   src_dir = 'system/lib/libcxx/src'
   src_glob = '**/*.cpp'
@@ -1666,6 +1668,14 @@ class libcxx(NoExceptLibrary, MTLibrary):
     # to IANA Time Zone Database. TODO Implement this using JS timezone
     'tz.cpp',
     'tzdb_list.cpp',
+    'chrono_exception.cpp',
+    'time_zone.cpp',
+    'tzdb.cpp',
+    'tzdb_list.cpp',
+    'time_zone_private.h',
+    'types_private.h',
+    'tzdb_list_private.h',
+    'tzdb_private.h',
   ]
 
   def get_cflags(self):
