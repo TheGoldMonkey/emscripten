@@ -1,4 +1,4 @@
-#!MCVM rm -rf ts/build; cmake -Sts -Bts/build -GNinja && cmake --build ts/build
+#!MCVM rm -rf build; cmake -S . -Bbuild -GNinja && cmake --build build
 cmake_minimum_required(VERSION 3.30)
 set(CMAKE_VERBOSE_MAKEFILE ON CACHE BOOL "ON")
 set(CMAKE_C_COMPILER_WORKS 1 CACHE STRING "")

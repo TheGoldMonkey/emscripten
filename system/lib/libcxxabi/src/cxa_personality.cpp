@@ -167,7 +167,7 @@ uintptr_t readPointerHelper(const uint8_t*& p) {
     return static_cast<uintptr_t>(value);
 }
 
-} // end namespace
+} // namespace
 
 extern "C"
 {
@@ -663,7 +663,6 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
     const uint8_t* lpStart = lpStartEncoding == DW_EH_PE_omit
                                  ? (const uint8_t*)funcStart
                                  : (const uint8_t*)readEncodedPointer(&lsda, lpStartEncoding, base);
-    (void)(lpStart);  // Unused when using SjLj/Wasm exceptions
     uint8_t ttypeEncoding = *lsda++;
     if (ttypeEncoding != DW_EH_PE_omit)
     {
@@ -677,7 +676,7 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
     // includes current PC.
     uint8_t callSiteEncoding = *lsda++;
 #if defined(__USING_SJLJ_EXCEPTIONS__) || defined(__WASM_EXCEPTIONS__)
-    (void)callSiteEncoding;  // Unused when using SjLj/Wasm exceptions
+    (void)callSiteEncoding;  // When using SjLj/Wasm exceptions, callSiteEncoding is never used
 #endif
     uint32_t callSiteTableLength = static_cast<uint32_t>(readULEB128(&lsda));
     const uint8_t* callSiteTableStart = lsda;
@@ -718,9 +717,7 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
             if (actionEntry == 0)
             {
                 // Found a cleanup
-                results.reason = actions & _UA_SEARCH_PHASE
-                                     ? _URC_CONTINUE_UNWIND
-                                     : _URC_HANDLER_FOUND;
+                results.reason = (actions & _UA_SEARCH_PHASE) ? _URC_CONTINUE_UNWIND : _URC_HANDLER_FOUND;
                 return;
             }
             // Convert 1-based byte offset into
