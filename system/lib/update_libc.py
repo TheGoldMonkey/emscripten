@@ -47,6 +47,11 @@ def main():
     llvm_dir = os.path.abspath(sys.argv[1])
   else:
     llvm_dir = default_llvm_dir
+  os.makedirs(local_root, exist_ok=True)
+  os.makedirs(local_src, exist_ok=True)
+  os.makedirs(local_inc, exist_ok=True)
+  os.makedirs(local_shared, exist_ok=True)
+  os.makedirs(local_hdr, exist_ok=True)
   libc_dir = os.path.join(llvm_dir, 'libc')
   upstream_src = os.path.join(libc_dir, 'src')
   upstream_inc = os.path.join(libc_dir, 'include')
