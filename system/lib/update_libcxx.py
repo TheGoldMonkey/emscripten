@@ -58,8 +58,8 @@ def main():
   copy_tree(upstream_src, local_src)
   copy_tree(upstream_inc, local_inc)
 
-  shutil.copy2(os.path.join(script_dir, '__assertion_handler'), local_inc)
-  shutil.copy2(os.path.join(script_dir, '__config_site'), local_inc)
+  shutil.copy2(os.path.join(libcxx_dir, 'CREDITS.TXT'), local_root)
+  shutil.copy2(os.path.join(libcxx_dir, 'LICENSE.TXT'), local_root)
 
 
 if __name__ == '__main__':
