@@ -10,6 +10,7 @@
 #ifndef _LIBCPP___FORMAT_FORMAT_CONTEXT_H
 #define _LIBCPP___FORMAT_FORMAT_CONTEXT_H
 
+#include <__availability>
 #include <__concepts/same_as.h>
 #include <__config>
 #include <__format/buffer.h>
@@ -17,15 +18,16 @@
 #include <__format/format_arg_store.h>
 #include <__format/format_args.h>
 #include <__format/format_error.h>
-#include <__fwd/format.h>
+#include <__format/format_fwd.h>
 #include <__iterator/back_insert_iterator.h>
 #include <__iterator/concepts.h>
 #include <__memory/addressof.h>
 #include <__utility/move.h>
 #include <__variant/monostate.h>
+#include <cstddef>
 
-#if _LIBCPP_HAS_LOCALIZATION
-#  include <__locale>
+#ifndef _LIBCPP_HAS_NO_LOCALIZATION
+#  include <locale>
 #  include <optional>
 #endif
 
@@ -44,7 +46,7 @@ template <class _OutIt, class _CharT>
   requires output_iterator<_OutIt, const _CharT&>
 class _LIBCPP_TEMPLATE_VIS basic_format_context;
 
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
 /**
  * Helper to create a basic_format_context.
  *
@@ -66,7 +68,7 @@ __format_context_create(_OutIt __out_it, basic_format_args<basic_format_context<
 #  endif
 
 using format_context = basic_format_context<back_insert_iterator<__format::__output_buffer<char>>, char>;
-#  if _LIBCPP_HAS_WIDE_CHARACTERS
+#  ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
 using wformat_context = basic_format_context< back_insert_iterator<__format::__output_buffer<wchar_t>>, wchar_t>;
 #  endif
 
@@ -88,7 +90,7 @@ public:
   _LIBCPP_HIDE_FROM_ABI basic_format_arg<basic_format_context> arg(size_t __id) const noexcept {
     return __args_.get(__id);
   }
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
   _LIBCPP_HIDE_FROM_ABI std::locale locale() {
     if (!__loc_)
       __loc_ = std::locale{};
@@ -101,7 +103,7 @@ public:
 private:
   iterator __out_it_;
   basic_format_args<basic_format_context> __args_;
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
 
   // The Standard doesn't specify how the locale is stored.
   // [format.context]/6
@@ -130,10 +132,6 @@ private:
   _LIBCPP_HIDE_FROM_ABI explicit basic_format_context(_OutIt __out_it, basic_format_args<basic_format_context> __args)
       : __out_it_(std::move(__out_it)), __args_(__args) {}
 #  endif
-
-public:
-  basic_format_context(const basic_format_context&)            = delete;
-  basic_format_context& operator=(const basic_format_context&) = delete;
 };
 
 // A specialization for __retarget_buffer
@@ -163,37 +161,32 @@ public:
   template <class _Context>
   _LIBCPP_HIDE_FROM_ABI explicit basic_format_context(iterator __out_it, _Context& __ctx)
       : __out_it_(std::move(__out_it)),
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
         __loc_([](void* __c) { return static_cast<_Context*>(__c)->locale(); }),
 #  endif
         __ctx_(std::addressof(__ctx)),
         __arg_([](void* __c, size_t __id) {
-          auto __visitor = [&](auto __arg) -> basic_format_arg<basic_format_context> {
-            if constexpr (same_as<decltype(__arg), monostate>)
-              return {};
-            else if constexpr (same_as<decltype(__arg), typename basic_format_arg<_Context>::handle>)
-              // At the moment it's not possible for formatting to use a re-targeted handle.
-              // TODO FMT add this when support is needed.
-              std::__throw_format_error("Re-targeting handle not supported");
-            else
-              return basic_format_arg<basic_format_context>{
-                  __format::__determine_arg_t<basic_format_context, decltype(__arg)>(),
-                  __basic_format_arg_value<basic_format_context>(__arg)};
-          };
-#  if _LIBCPP_STD_VER >= 26 && _LIBCPP_HAS_EXPLICIT_THIS_PARAMETER
-          return static_cast<_Context*>(__c)->arg(__id).visit(std::move(__visitor));
-#  else
-          _LIBCPP_SUPPRESS_DEPRECATED_PUSH
-          return std::visit_format_arg(std::move(__visitor), static_cast<_Context*>(__c)->arg(__id));
-          _LIBCPP_SUPPRESS_DEPRECATED_POP
-#  endif // _LIBCPP_STD_VER >= 26 && _LIBCPP_HAS_EXPLICIT_THIS_PARAMETER
+          return std::visit_format_arg(
+              [&](auto __arg) -> basic_format_arg<basic_format_context> {
+                if constexpr (same_as<decltype(__arg), monostate>)
+                  return {};
+                else if constexpr (same_as<decltype(__arg), typename basic_format_arg<_Context>::handle>)
+                  // At the moment it's not possible for formatting to use a re-targeted handle.
+                  // TODO FMT add this when support is needed.
+                  std::__throw_format_error("Re-targeting handle not supported");
+                else
+                  return basic_format_arg<basic_format_context>{
+                      __format::__determine_arg_t<basic_format_context, decltype(__arg)>(),
+                      __basic_format_arg_value<basic_format_context>(__arg)};
+              },
+              static_cast<_Context*>(__c)->arg(__id));
         }) {
   }
 
   _LIBCPP_HIDE_FROM_ABI basic_format_arg<basic_format_context> arg(size_t __id) const noexcept {
     return __arg_(__ctx_, __id);
   }
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
   _LIBCPP_HIDE_FROM_ABI std::locale locale() { return __loc_(__ctx_); }
 #  endif
   _LIBCPP_HIDE_FROM_ABI iterator out() { return std::move(__out_it_); }
@@ -202,7 +195,7 @@ public:
 private:
   iterator __out_it_;
 
-#  if _LIBCPP_HAS_LOCALIZATION
+#  ifndef _LIBCPP_HAS_NO_LOCALIZATION
   std::locale (*__loc_)(void* __ctx);
 #  endif
 
@@ -211,7 +204,7 @@ private:
 };
 
 _LIBCPP_CTAD_SUPPORTED_FOR_TYPE(basic_format_context);
-#endif // _LIBCPP_STD_VER >= 20
+#endif //_LIBCPP_STD_VER >= 20
 
 _LIBCPP_END_NAMESPACE_STD
 

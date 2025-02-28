@@ -275,6 +275,13 @@ handler, _Unwind_RaiseException may return. In that case, __cxa_throw
 will call terminate, assuming that there was no handler for the
 exception.
 */
+
+#if defined(__EMSCRIPTEN__) && defined(__WASM_EXCEPTIONS__) && !defined(NDEBUG)
+extern "C" {
+void __throw_exception_with_stack_trace(_Unwind_Exception*);
+} // extern "C"
+#endif
+
 void
 #ifdef __wasm__
 // In Wasm, a destructor returns its argument
@@ -595,11 +602,6 @@ void __cxa_end_catch() {
             globals->caughtExceptions = 0;
         }
     }
-}
-
-void __cxa_call_terminate(void* unwind_arg) throw() {
-  __cxa_begin_catch(unwind_arg);
-  std::terminate();
 }
 
 // Note:  exception_header may be masquerading as a __cxa_dependent_exception

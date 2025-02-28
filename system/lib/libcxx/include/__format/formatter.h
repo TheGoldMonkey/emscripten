@@ -10,8 +10,9 @@
 #ifndef _LIBCPP___FORMAT_FORMATTER_H
 #define _LIBCPP___FORMAT_FORMATTER_H
 
+#include <__availability>
 #include <__config>
-#include <__fwd/format.h>
+#include <__format/format_fwd.h>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
@@ -38,9 +39,6 @@ struct _LIBCPP_TEMPLATE_VIS formatter {
 };
 
 #  if _LIBCPP_STD_VER >= 23
-
-template <class _Tp>
-constexpr bool enable_nonlocking_formatter_optimization = false;
 
 template <class _Tp>
 _LIBCPP_HIDE_FROM_ABI constexpr void __set_debug_format(_Tp& __formatter) {

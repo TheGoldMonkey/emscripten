@@ -844,10 +844,7 @@ var LibraryEmbind = {
   $embindEmitTypes__postset: 'addOnInit(embindEmitTypes);',
   $embindEmitTypes: () => {
     for (const typeId in awaitingDependencies) {
-      throwBindingError(`Missing binding for type: '${getTypeName(typeId)}' typeId: ${typeId} ${JSON.stringify(awaitingDependencies)} ${JSON.stringify(moduleDefinitions)}
-      ${JSON.stringify(registeredTypes)}
-      ${JSON.stringify(typeDependencies)}
-      `);
+      throwBindingError(`Missing binding for type: '${getTypeName(typeId)}' typeId: ${typeId}`);
     }
     const printer = new TsPrinter(moduleDefinitions);
     printer.print();

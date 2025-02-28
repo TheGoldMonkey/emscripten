@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <__verbose_abort>
+#include <cstdio>
 
 namespace std {
 
@@ -21,7 +21,7 @@ unexpected_handler set_unexpected(unexpected_handler func) noexcept {
 
 unexpected_handler get_unexpected() noexcept { return __libcpp_atomic_load(&__unexpected_handler); }
 
-[[noreturn]] void unexpected() {
+_LIBCPP_NORETURN void unexpected() {
   (*get_unexpected())();
   // unexpected handler should not return
   terminate();
@@ -33,20 +33,21 @@ terminate_handler set_terminate(terminate_handler func) noexcept {
 
 terminate_handler get_terminate() noexcept { return __libcpp_atomic_load(&__terminate_handler); }
 
-#ifndef __EMSCRIPTEN__ // We provide this in JS
 [[noreturn]] void terminate() noexcept {
 #if _LIBCPP_HAS_EXCEPTIONS
   try {
-#endif // _LIBCPP_HAS_EXCEPTIONS
+#endif // _LIBCPP_HAS_NO_EXCEPTIONS
     (*get_terminate())();
     // handler should not return
-    __libcpp_verbose_abort("terminate_handler unexpectedly returned\n");
-#if _LIBCPP_HAS_EXCEPTIONS
+    fprintf(stderr, "terminate_handler unexpectedly returned\n");
+    ::abort();
+#ifndef _LIBCPP_HAS_NO_EXCEPTIONS
   } catch (...) {
     // handler should not throw exception
-    __libcpp_verbose_abort("terminate_handler unexpectedly threw an exception\n");
+    fprintf(stderr, "terminate_handler unexpectedly threw an exception\n");
+    ::abort();
   }
-#endif // _LIBCPP_HAS_EXCEPTIONS
+#endif // _LIBCPP_HAS_NO_EXCEPTIONS
 }
 #endif // !__EMSCRIPTEN__
 
@@ -55,7 +56,8 @@ bool uncaught_exception() noexcept { return uncaught_exceptions() > 0; }
 
 int uncaught_exceptions() noexcept {
 #warning uncaught_exception not yet implemented
-  __libcpp_verbose_abort("uncaught_exceptions not yet implemented\n");
+  fprintf(stderr, "uncaught_exceptions not yet implemented\n");
+  ::abort();
 }
 #endif // !__EMSCRIPTEN__
 

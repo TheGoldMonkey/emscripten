@@ -10,6 +10,7 @@
 #ifndef _LIBCPP___FILESYSTEM_OPERATIONS_H
 #define _LIBCPP___FILESYSTEM_OPERATIONS_H
 
+#include <__availability>
 #include <__chrono/time_point.h>
 #include <__config>
 #include <__filesystem/copy_options.h>
@@ -27,7 +28,7 @@
 #  pragma GCC system_header
 #endif
 
-#if _LIBCPP_STD_VER >= 17 && _LIBCPP_HAS_FILESYSTEM
+#if _LIBCPP_STD_VER >= 17 && !defined(_LIBCPP_HAS_NO_FILESYSTEM)
 
 _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
 
@@ -305,6 +306,6 @@ _LIBCPP_AVAILABILITY_FILESYSTEM_LIBRARY_POP
 
 _LIBCPP_END_NAMESPACE_FILESYSTEM
 
-#endif // _LIBCPP_STD_VER >= 17 && _LIBCPP_HAS_FILESYSTEM
+#endif // _LIBCPP_STD_VER >= 17 && !defined(_LIBCPP_HAS_NO_FILESYSTEM)
 
 #endif // _LIBCPP___FILESYSTEM_OPERATIONS_H

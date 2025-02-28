@@ -42,6 +42,7 @@
 #include <__utility/auto_cast.h>
 #include <__utility/forward.h>
 #include <__utility/move.h>
+#include <cstddef>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #  pragma GCC system_header
@@ -307,7 +308,7 @@ struct __fn {
             class _RawRange = remove_cvref_t<_Range>,
             class _Dist     = range_difference_t<_Range>>
     requires(__is_repeat_specialization<_RawRange> && sized_range<_RawRange>)
-  [[nodiscard]] _LIBCPP_HIDE_FROM_ABI constexpr auto operator()(_Range&& __range, _Np&& __n) const
+  _LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr auto operator()(_Range&& __range, _Np&& __n) const
     noexcept(noexcept(views::repeat(*__range.__value_, std::min<_Dist>(ranges::distance(__range), std::forward<_Np>(__n)))))
     -> decltype(      views::repeat(*__range.__value_, std::min<_Dist>(ranges::distance(__range), std::forward<_Np>(__n))))
     { return          views::repeat(*__range.__value_, std::min<_Dist>(ranges::distance(__range), std::forward<_Np>(__n))); }
@@ -318,7 +319,7 @@ struct __fn {
             class _RawRange = remove_cvref_t<_Range>,
             class _Dist     = range_difference_t<_Range>>
     requires(__is_repeat_specialization<_RawRange> && !sized_range<_RawRange>)
-  [[nodiscard]] _LIBCPP_HIDE_FROM_ABI constexpr auto operator()(_Range&& __range, _Np&& __n) const
+  _LIBCPP_NODISCARD_EXT _LIBCPP_HIDE_FROM_ABI constexpr auto operator()(_Range&& __range, _Np&& __n) const
     noexcept(noexcept(views::repeat(*__range.__value_, static_cast<_Dist>(__n))))
     -> decltype(      views::repeat(*__range.__value_, static_cast<_Dist>(__n)))
     { return          views::repeat(*__range.__value_, static_cast<_Dist>(__n)); }
@@ -346,7 +347,7 @@ struct __fn {
     requires constructible_from<decay_t<_Np>, _Np>
   [[nodiscard]] _LIBCPP_HIDE_FROM_ABI constexpr auto operator()(_Np&& __n) const
       noexcept(is_nothrow_constructible_v<decay_t<_Np>, _Np>) {
-    return __pipeable(std::__bind_back(*this, std::forward<_Np>(__n)));
+    return __range_adaptor_closure_t(std::__bind_back(*this, std::forward<_Np>(__n)));
   }
 };
 

@@ -22,7 +22,6 @@
 #include <__type_traits/conditional.h>
 #include <__type_traits/extent.h>
 #include <__type_traits/remove_const.h>
-#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -49,7 +48,7 @@ template <class _Context, same_as<typename _Context::char_type> _Tp>
 consteval __arg_t __determine_arg_t() {
   return __arg_t::__char_type;
 }
-#  if _LIBCPP_HAS_WIDE_CHARACTERS
+#  ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
 template <class _Context, class _CharT>
   requires(same_as<typename _Context::char_type, wchar_t> && same_as<_CharT, char>)
 consteval __arg_t __determine_arg_t() {
@@ -64,7 +63,7 @@ consteval __arg_t __determine_arg_t() {
     return __arg_t::__int;
   else if constexpr (sizeof(_Tp) <= sizeof(long long))
     return __arg_t::__long_long;
-#  if _LIBCPP_HAS_INT128
+#  ifndef _LIBCPP_HAS_NO_INT128
   else if constexpr (sizeof(_Tp) == sizeof(__int128_t))
     return __arg_t::__i128;
 #  endif
@@ -79,7 +78,7 @@ consteval __arg_t __determine_arg_t() {
     return __arg_t::__unsigned;
   else if constexpr (sizeof(_Tp) <= sizeof(unsigned long long))
     return __arg_t::__unsigned_long_long;
-#  if _LIBCPP_HAS_INT128
+#  ifndef _LIBCPP_HAS_NO_INT128
   else if constexpr (sizeof(_Tp) == sizeof(__uint128_t))
     return __arg_t::__u128;
 #  endif
@@ -152,7 +151,7 @@ consteval __arg_t __determine_arg_t() {
 // The overload for not formattable types allows triggering the static
 // assertion below.
 template <class _Context, class _Tp>
-  requires(!__formattable_with<_Tp, _Context>)
+  requires(!__formattable<_Tp, typename _Context::char_type>)
 consteval __arg_t __determine_arg_t() {
   return __arg_t::__none;
 }
@@ -166,6 +165,7 @@ _LIBCPP_HIDE_FROM_ABI basic_format_arg<_Context> __create_format_arg(_Tp& __valu
   using _Dp               = remove_const_t<_Tp>;
   constexpr __arg_t __arg = __determine_arg_t<_Context, _Dp>();
   static_assert(__arg != __arg_t::__none, "the supplied type is not formattable");
+
   static_assert(__formattable_with<_Tp, _Context>);
 
   // Not all types can be used to directly initialize the
@@ -173,7 +173,7 @@ _LIBCPP_HIDE_FROM_ABI basic_format_arg<_Context> __create_format_arg(_Tp& __valu
   // final else requires no adjustment.
   if constexpr (__arg == __arg_t::__char_type)
 
-#  if _LIBCPP_HAS_WIDE_CHARACTERS
+#  ifndef _LIBCPP_HAS_NO_WIDE_CHARACTERS
     if constexpr (same_as<typename _Context::char_type, wchar_t> && same_as<_Dp, char>)
       return basic_format_arg<_Context>{__arg, static_cast<wchar_t>(static_cast<unsigned char>(__value))};
     else
@@ -234,11 +234,6 @@ struct __packed_format_arg_store {
   uint64_t __types_ = 0;
 };
 
-template <class _Context>
-struct __packed_format_arg_store<_Context, 0> {
-  uint64_t __types_ = 0;
-};
-
 template <class _Context, size_t _Np>
 struct __unpacked_format_arg_store {
   basic_format_arg<_Context> __args_[_Np];
@@ -265,7 +260,7 @@ struct _LIBCPP_TEMPLATE_VIS __format_arg_store {
   _Storage __storage;
 };
 
-#endif // _LIBCPP_STD_VER >= 20
+#endif //_LIBCPP_STD_VER >= 20
 
 _LIBCPP_END_NAMESPACE_STD
 
