@@ -36,4 +36,3 @@ coverage.xml
 !/tools/run_python.ps1
 !/tools/run_python_compiler.ps1
 logs
-ts

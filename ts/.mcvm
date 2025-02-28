@@ -1,0 +1,1 @@
+#!MCVM cmake -Sts -Bts/build -GNinja && cmake --build ts/build
