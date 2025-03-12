@@ -128,7 +128,7 @@ consteval auto is_type(info) -> bool;
 consteval auto is_type_alias(info) -> bool;
 consteval auto is_namespace_alias(info) -> bool;
 consteval auto is_complete_type(info) -> bool;
-consteval auto has_complete_definition(info) -> bool;
+consteval auto is_enumerable_type(info) -> bool;
 consteval auto is_template(info) -> bool;
 consteval auto is_function_template(info) -> bool;
 consteval auto is_variable_template(info) -> bool;
@@ -483,6 +483,7 @@ enum : unsigned {
   __metafn_is_alias,
   __metafn_is_complete_type,
   __metafn_has_complete_definition,
+  __metafn_is_enumerable_type,
   __metafn_is_template,
   __metafn_is_function_template,
   __metafn_is_variable_template,
@@ -1076,13 +1077,13 @@ consteval auto nonstatic_data_members_of(info r) -> vector<info> {
          ranges::to<vector>();
 }
 
-// Returns true if the reflected entity has a complete definition.
-consteval auto has_complete_definition(info r) -> bool {
-  return __metafunction(detail::__metafn_has_complete_definition, r);
+// Returns true if the reflected entity is an enumerable type.
+consteval auto is_enumerable_type(info r) -> bool {
+  return __metafunction(detail::__metafn_is_enumerable_type, r);
 }
 
 consteval auto enumerators_of(info r) -> vector<info> {
-  if (!has_complete_definition(r))
+  if (!is_enumerable_type(r))
     throw "Reflection must represent an enumeration with a definition";
 
   using iterator =
@@ -2373,6 +2374,11 @@ consteval auto static_data_members_of(info r) -> vector<info> {
              "(compile with '-fno-access-contexts' to disable this warning)")]]
 consteval auto nonstatic_data_members_of(info r) -> vector<info> {
   return nonstatic_data_members_of(r, access_context::unchecked());
+}
+
+[[deprecated("replaced with 'is_enumerable_type' in P2996R11")]]
+consteval auto has_complete_definition(info r) -> bool {
+  return __metafunction(detail::__metafn_has_complete_definition, r);
 }
 
 #endif  // __has_feature(access_contexts)

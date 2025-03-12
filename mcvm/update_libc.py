@@ -10,9 +10,10 @@ import sys
 import shutil
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
-emscripten_root = os.path.dirname(os.path.dirname(script_dir))
+emscripten_root = os.path.dirname(script_dir)
 default_llvm_dir = os.path.join(os.path.dirname(emscripten_root), 'llvm-project')
-local_root = os.path.join(script_dir, 'libc', 'llvm')
+# local_root = os.path.join(script_dir, 'libc', 'llvm')
+local_root = os.path.join(emscripten_root, 'system', 'lib', 'libc', 'llvm')
 local_src = os.path.join(local_root, 'src')
 local_inc = os.path.join(local_root, 'include')
 local_shared = os.path.join(local_root, 'shared')
@@ -52,6 +53,7 @@ def main():
   upstream_inc = os.path.join(libc_dir, 'include')
   upstream_shared = os.path.join(libc_dir, 'shared')
   upstream_hdr = os.path.join(libc_dir, 'hdr')
+  print(script_dir, emscripten_root, default_llvm_dir, local_root, local_src, local_inc, llvm_dir, libc_dir, upstream_src, upstream_inc, upstream_shared, upstream_hdr)
   assert os.path.exists(upstream_inc)
   assert os.path.exists(upstream_src)
   assert os.path.exists(upstream_hdr)
