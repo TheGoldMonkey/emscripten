@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 
+this_dir = os.path.abspath(os.path.dirname(__file__))
 script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'system', 'lib')
 emscripten_root = os.path.dirname(os.path.dirname(script_dir))
 default_llvm_dir = os.path.join(os.path.dirname(emscripten_root), 'llvm-project')
@@ -59,8 +60,8 @@ def main():
   copy_tree(upstream_src, local_src)
   copy_tree(upstream_inc, local_inc)
 
-  shutil.copy2(os.path.join(script_dir, '__assertion_handler'), local_inc)
-  shutil.copy2(os.path.join(script_dir, '__config_site'), local_inc)
+  shutil.copy2(os.path.join(this_dir, '__assertion_handler'), local_inc)
+  shutil.copy2(os.path.join(this_dir, '__config_site'), local_inc)
 
 
 if __name__ == '__main__':

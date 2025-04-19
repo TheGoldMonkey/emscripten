@@ -1587,7 +1587,8 @@ class libcxxabi(NoExceptLibrary, MTLibrary, DebugLibrary):
     if not self.is_mt and not self.is_ww:
       cflags.append('-D_LIBCXXABI_HAS_NO_THREADS')
     if self.eh_mode == Exceptions.NONE:
-      cflags.append('-D_LIBCXXABI_NO_EXCEPTIONS')
+      # cflags.append('-D_LIBCXXABI_NO_EXCEPTIONS')
+      pass
     elif self.eh_mode == Exceptions.EMSCRIPTEN:
       cflags.append('-D__EMSCRIPTEN_EXCEPTIONS__')
       # The code used to interpret exceptions during terminate
