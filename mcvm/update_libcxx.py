@@ -13,7 +13,7 @@ this_dir = os.path.abspath(os.path.dirname(__file__))
 script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'system', 'lib')
 emscripten_root = os.path.dirname(os.path.dirname(script_dir))
 default_llvm_dir = os.path.join(os.path.dirname(emscripten_root), 'llvm-project')
-local_root = os.path.join(script_dir, 'libcxx')
+local_root = os.path.join(script_dir, '..', '..', 'mcvm', 'system', 'lib', 'libcxx')
 local_src = os.path.join(local_root, 'src')
 local_inc = os.path.join(local_root, 'include')
 

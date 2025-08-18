@@ -1616,7 +1616,7 @@ class libcxxabi(ExceptionLibrary, MTLibrary, DebugLibrary):
       '-D_LIBCPP_BUILDING_LIBRARY',
       '-D_LIBCXXABI_BUILDING_LIBRARY',
       '-DLIBCXXABI_NON_DEMANGLING_TERMINATE',
-      '-std=c++26',
+      '-std=c++23',
     ]
   includes = ['system/lib/libcxx/src']
 
@@ -2519,8 +2519,8 @@ def install_system_headers(stamp):
     # This mimics how musl itself installs its headers.
     'system/lib/libc/musl/arch/emscripten': '',
     'system/lib/libc/musl/include': '',
-    'system/lib/libcxx/include': 'c++/v1',
-    'system/lib/libcxxabi/include': 'c++/v1',
+    'mcvm/system/lib/libcxx/include': 'c++/v1',
+    'mcvm/system/lib/libcxxabi/include': 'c++/v1',
     'system/lib/mimalloc/include': '',
   }
 
@@ -2568,7 +2568,12 @@ def build_deferred():
 
 
 class libcxx(libcxx):
-    src_dir = 'mcvm/system/libcxx/src'
+    src_dir = 'mcvm/system/lib/libcxx/src'
+    try:
+        del libcxx.includes
+        del libcxx.cflags
+    except AttributeError:
+        pass
 
     cflags = [
         '-Oz',
@@ -2582,7 +2587,7 @@ class libcxx(libcxx):
         '-Wno-unknown-warning-option',
         '-std=c++26',
         '-DLIBC_NAMESPACE=__llvm_libc',
-      ]
+    ]
 
     src_glob_exclude = [
       'xlocale_zos.cpp',
@@ -2610,10 +2615,57 @@ class libcxx(libcxx):
       'tzdb_private.h',
     ]
 
-    try:
-        del libcxx.includes
-        del libcxx.cflags
-    except AttributeError:
-        pass
+    includes = ['mcvm/system/lib/libcxx/src', 'system/lib/llvm-libc']
 
-    includes = ['mcvm/system/libcxx/src', 'system/lib/llvm-libc']
+class libcxxabi(libcxxabi):
+  try:
+      del libcxxabi.includes
+      del libcxxabi.cflags
+  except AttributeError:
+      pass
+
+  cflags = [
+      '-Oz',
+      '-fno-inline-functions',
+      '-D_LIBCPP_BUILDING_LIBRARY',
+      '-D_LIBCXXABI_BUILDING_LIBRARY',
+      '-DLIBCXXABI_NON_DEMANGLING_TERMINATE',
+      '-std=c++26',
+    ]
+
+  includes = ['mcvm/system/lib/libcxx/src']
+
+  def get_files(self):
+    filenames = [
+      'abort_message.cpp',
+      'cxa_aux_runtime.cpp',
+      'cxa_default_handlers.cpp',
+      'cxa_demangle.cpp',
+      'cxa_guard.cpp',
+      'cxa_handlers.cpp',
+      'cxa_virtual.cpp',
+      'cxa_thread_atexit.cpp',
+      'fallback_malloc.cpp',
+      'stdlib_new_delete.cpp',
+      'stdlib_exception.cpp',
+      'stdlib_stdexcept.cpp',
+      'stdlib_typeinfo.cpp',
+      'private_typeinfo.cpp',
+      'cxa_exception_js_utils.cpp',
+    ]
+    if self.eh_mode == Exceptions.NONE:
+      filenames += ['cxa_noexception.cpp']
+    elif self.eh_mode == Exceptions.EMSCRIPTEN:
+      filenames += ['cxa_exception_emscripten.cpp']
+    elif self.eh_mode in (Exceptions.WASM_LEGACY, Exceptions.WASM):
+      filenames += [
+        'cxa_exception_storage.cpp',
+        'cxa_exception.cpp',
+        'cxa_personality.cpp',
+      ]
+    else:
+      assert False
+
+    return files_in_path(
+        path='mcvm/system/lib/libcxxabi/src',
+        filenames=filenames)

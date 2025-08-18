@@ -1,5 +1,7 @@
-#!MCVM cd ${mdir} && cmake -GNinja -S. -Bbuild -DCMAKE_TOOLCHAIN_FILE=Emscripten.cmake --fresh \
+#!MCVM cd ${mdir} && rm -rf build && rm -rf .cache && \
+#!MCVM cmake -GNinja -S. -Bbuild --toolchain Emscripten.cmake --fresh \
 #!MCVM && cmake --build build
+
 cmake_minimum_required(VERSION 3.30)
 project(mcvm_emscripten)
 
@@ -30,7 +32,7 @@ target_compile_options(
     -fexpansion-statements
     -fparameter-reflection
     -fentity-proxy-reflection
-    
+
     # -fsanitize=address
     # -fsanitize=undefined
     # -flto=thin
@@ -73,6 +75,7 @@ target_compile_options(
 
 target_link_options(
     mcvm_emscripten PUBLIC
+    -sWASM_LEGACY_EXCEPTIONS=0
 )
 
 target_link_libraries(

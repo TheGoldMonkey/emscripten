@@ -1,8 +1,7 @@
 #!MCVM cd ${mdir} && cmake -GNinja -S. -Bbuild -DCMAKE_TOOLCHAIN_FILE=Emscripten.cmake --fresh \
 #!MCVM && cmake --build build
 
-include(../cmake/Modules/Platform/Emscripten.cmake)
-
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/Modules/Platform/Emscripten.cmake)
 
 
 set(EMSCRIPTEN_CONFIG_FLAG "--em-config ${CMAKE_SOURCE_DIR}/.emscripten")
