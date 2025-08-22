@@ -75,7 +75,6 @@ target_compile_options(
 
 target_link_options(
     mcvm_emscripten PUBLIC
-    -sWASM_LEGACY_EXCEPTIONS=0
 )
 
 target_link_libraries(

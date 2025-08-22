@@ -1642,7 +1642,6 @@ class libcxxabi(ExceptionLibrary, MTLibrary, DebugLibrary):
       cflags.append('-DLIBCXXABI_SILENT_TERMINATE')
     elif self.eh_mode == Exceptions.WASM_LEGACY:
       cflags.append('-D__WASM_EXCEPTIONS__')
-      cflags.append('-Wno-unused-variable')
     return cflags
 
   def get_files(self):
@@ -2568,6 +2567,14 @@ def build_deferred():
 
 
 class libcxx(libcxx):
+    def __init__(self, **kwargs):
+      super().__init__(**kwargs)
+      # TODO EXCEPTION_STACK_TRACES currently requires the debug version of
+      # libc++abi, causing the debug version of libc++abi to be linked, which
+      # increases code size. libc++abi is not a big library to begin with, but if
+      # this becomes a problem, consider making EXCEPTION_STACK_TRACES work with
+      # the non-debug version of libc++abi.
+      self.is_debug |= settings.EXCEPTION_STACK_TRACES
     src_dir = 'mcvm/system/lib/libcxx/src'
     try:
         del libcxx.includes
