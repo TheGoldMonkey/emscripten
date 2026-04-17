@@ -66,6 +66,7 @@ target_compile_options(
     -Wno-missing-field-initializers
     -Wno-missing-braces
     -Wno-unused-lambda-capture
+    -Wno-version-check
 
     # -Wno-error=sign-compare
     -Wno-sign-compare
