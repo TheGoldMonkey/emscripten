@@ -1,4 +1,5 @@
-#!MCVM cd ${mdir} && cmake -GNinja -S. -Bbuild -DCMAKE_TOOLCHAIN_FILE=Emscripten.cmake --fresh \
+#!MCVM cd ${mdir} && rm -rf build && rm -rf .cache && \
+#!MCVM cmake -GNinja -S. -Bbuild --toolchain Emscripten.cmake --fresh \
 #!MCVM && cmake --build build
 
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/Modules/Platform/Emscripten.cmake)
@@ -53,22 +54,22 @@ list(APPEND EM_CFLAGS
     # -pipe
 )
 # set(CMAKE_CXX_SCAN_FOR_MODULES 0)
-message("getting cflags")
-message("0:::::::::::::::::::::::::::::::::")
-message("${CMAKE_CXX_COMPILER} --cflags ${EM_CFLAGS}")
-message("1:::::::::::::::::::::::::::::::::")
+# message("getting cflags")
+# message("0:::::::::::::::::::::::::::::::::")
+# message("${CMAKE_CXX_COMPILER} --cflags ${EM_CFLAGS}")
+# message("1:::::::::::::::::::::::::::::::::")
 execute_process(COMMAND "${CMAKE_CXX_COMPILER}" --cflags ${EM_CFLAGS} OUTPUT_VARIABLE EM_CFLAGS_OUT COMMAND_ECHO STDOUT)
-message("2:::::::::::::::::::::::::::::::::")
-message("${EM_CFLAGS_OUT}")
-message("3:::::::::::::::::::::::::::::::::")
+# message("2:::::::::::::::::::::::::::::::::")
+# message("${EM_CFLAGS_OUT}")
+# message("3:::::::::::::::::::::::::::::::::")
 string(REPLACE "\n" "" EM_CFLAGS_OUT ${EM_CFLAGS_OUT})
 # string(REPLACE "-mllvm -disable-lsr" "" EM_CFLAGS ${EM_CFLAGS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-# set(CMAKE_DEPFILE_FLAGS_CXX "${CMAKE_DEPFILE_FLAGS_CXX} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-# set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-# set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-# set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
+# # set(CMAKE_DEPFILE_FLAGS_CXX "${CMAKE_DEPFILE_FLAGS_CXX} ${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sWASM_LEGACY_EXCEPTIONS=0")
+# # set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -sWASM_LEGACY_EXCEPTIONS=0")
+# # set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -sWASM_LEGACY_EXCEPTIONS=0")
+# set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -sWASM_LEGACY_EXCEPTIONS=0")
 
 
