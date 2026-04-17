@@ -1,0 +1,73 @@
+CompileFlags:
+  # Add: []
+  CompilationDatabase: ./build
+  Add:
+    - -ferror-limit=19
+    - -Wno-unknown-warning-option
+    # - -matomics
+    # - -mbulk-memory
+    # - -mextended-const
+    # - -mmultimemory
+    # - -mmultivalue
+    # - -mrelaxed-simd
+    # - -msimd128
+    - -msse4.2
+    # - -DJPH_USE_SSE=0
+    # - -mtail-call 
+    # - --target=wasm32-unknown-emscripten
+    # - --target=wasm32-unknown-unknown-elf
+    # - -target
+    # - wasm32-unknown-emscripten
+    # - -fignore-exceptions
+    # - -mllvm
+    # - -combiner-global-alias-analysis=false
+    # - -mllvm
+    # - -enable-emscripten-sjlj
+    # - -mllvm
+    # - -disable-lsr
+    # - --sysroot=/home/user/workspace/emsdk/upstream/emscripten/cache/sysroot
+    # - -DEMSCRIPTEN
+    # - -Xclang
+    # - -iwithsysroot/include/fakesdl
+    # - -Xclang
+    # - -iwithsysroot/include/compat
+
+  # Remove: [-s*, -sUSE_BOOST_HEADERS=1, -sSHARED_MEMORY, -sWASM_BIGINT, -gsource-map, -profiling-funcs, -gseparate-dwarf, --embed-dir*, --emit-tsd*, --emit-tsd=scpp.d.ts, emit-tsd=scpp.d.ts, --threadprofiler, -fgpu*, -mavx, -sERROR_ON_WASM_CHANGES_AFTER_LINK]
+  Remove: 
+    - -fplugin*
+    - -sSHARED_MEMORY
+    - -sWASM_BIGINT
+    - -gsource-map
+    - -profiling-funcs
+    - -gseparate-dwarf
+    - --embed-dir*
+    - --emit-tsd*
+    - --emit-tsd=scpp.d.ts
+    - --threadprofiler
+    - -fgpu*
+    - -mavx
+    - -sERROR_ON_WASM_CHANGES_AFTER_LINK
+    - --profiling
+
+    # - -forward-unknown-to-host-compiler
+
+
+
+# doesnt work
+# Diagnostics:
+#   Suppress:
+#     - drv_unsupported_opt_for_target
+
+# InlayHints:
+  # Enabled: Yes
+  # ParameterNames: Yes
+  # DeducedTypes: Yes
+
+
+---
+If:
+  PathMatch: '.*preprocessed.*'
+Index:
+  Background: Skip
+
+

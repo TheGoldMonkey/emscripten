@@ -1,0 +1,16 @@
+If:
+  PathMatch: '.*'
+CompileFlags:
+  Add:
+    - -I/home/mcvm/dev/emscripten/system/lib/libc
+    - -I/home/mcvm/dev/emscripten/cache/sysroot/include
+    - -D__USING_WASM_SJLJ__
+  # CompilationDatabase: ./build
+  # Add:
+  #   - -ferror-limit=0
+  #   - -Wno-unknown-warning-option
+  # Remove: 
+  #   - -w
+  #   # - -forward-unknown-to-host-compiler
+
+

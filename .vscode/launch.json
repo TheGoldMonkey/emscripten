@@ -1,0 +1,87 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "node",
+      "type": "node",
+      "request": "launch",
+      "console": "internalConsole",
+      "args": [
+        "${file}"
+      ],
+    },
+    {
+      "name": "compiler",
+      "type": "node",
+      "request": "launch",
+      "program": "/home/mcvm/dev/emscripten/src/compiler.mjs",
+      "console": "integratedTerminal",
+      "args": [
+        "/tmp/nix-shell.bnZVwj/emscripten_temp/tmp1u23xw_5.json"
+      ],
+    },
+    {
+      "name": "em++",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "/home/mcvm/dev/emscripten/em++.py",
+      "console": "integratedTerminal",
+      "args": [
+"-fcolor-diagnostics",
+"-g",
+"-Wl,--color-diagnostics",
+"-Wl,--thinlto-cache-dir=.cache/lto",
+"-Wl,--color-diagnostics",
+"-sINITIAL_MEMORY=1310720000",
+"-sSTACK_SIZE=5000000",
+"-sFORCE_FILESYSTEM",
+"-sWASMFS",
+"-fwasm-exceptions",
+"-pthread",
+"-sEXPORT_ES6",
+"-sSHARED_MEMORY",
+"-sPOLYFILL=0",
+"-sENVIRONMENT=web,worker,node",
+"-sMODULARIZE",
+"-sALLOW_BLOCKING_ON_MAIN_THREAD",
+"-sINVOKE_RUN=1",
+"-sEXCEPTION_STACK_TRACES",
+"-sEXPORT_EXCEPTION_HANDLING_HELPERS=1",
+"-sASSERTIONS=1",
+"-sSUPPORT_LONGJMP=1",
+"-sLOAD_SOURCE_MAP",
+"-gsource-map",
+"--emit-symbol-map",
+"-sPROXY_TO_PTHREAD",
+"-g",
+"--shell-file=/home/mcvm/dev/sshooter/shell.html",
+"--embed-file=/home/mcvm/dev/sshooter/src/shaders@shaders",
+"build/_deps/slang_source-src/source/slang/CMakeFiles/slang-capability-lookup.dir/Debug/capability/slang-lookup-capability-defs.cpp.o",
+"build/_deps/slang_source-src/source/slang/CMakeFiles/slang-lookup-tables.dir/Debug/slang-lookup-tables/slang-lookup-GLSLstd450.cpp.o",
+"build/_deps/slang_source-src/source/slang/CMakeFiles/slang-lookup-tables.dir/Debug/slang-lookup-tables/slang-spirv-core-grammar-embed.cpp.o",
+"CMakeFiles/sshooter.dir/Debug/src/main.cpp.o",
+"CMakeFiles/sshooter.dir/Debug/src/shaders.cpp.o",
+"-o",
+"Debug/sshooter.html",
+"_deps/fmt-build/Debug/libfmtd.a",
+"-lc++",
+"build/_deps/slang_source-src/external/miniz/Debug/libminiz.a",
+"build/_deps/slang_source-src/external/lz4/build/cmake/Debug/liblz4.a",
+"Debug/lib/libslang.a",
+"Debug/lib/libcore.a",
+"Debug/lib/libcompiler-core.a",
+"Debug/lib/libcompiler-core.a",
+"Debug/lib/libcore.a",
+"build/_deps/slang_source-src/external/miniz/Debug/libminiz.a",
+"build/_deps/slang_source-src/external/lz4/build/cmake/Debug/liblz4.a",
+      ],
+      "cwd": "/home/mcvm/dev/sshooter/build",
+      "env": {
+        "EMCC_DEBUG": "1"
+      }
+    }
+  ]
+}
