@@ -55,6 +55,7 @@ list(APPEND EM_CFLAGS
   # -fdata-sections
   # -frtti
   # -pipe
+  # -v
 )
 set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 # message("getting cflags")
@@ -64,25 +65,25 @@ set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 
 # https://cmake.org/cmake/help/latest/command/separate_arguments.html#command:separate_arguments
 execute_process(COMMAND "${CMAKE_CXX_COMPILER}" --cflags ${EM_CFLAGS} OUTPUT_VARIABLE EM_CFLAGS_OUT COMMAND_ECHO STDOUT)
+separate_arguments(EM_CFLAGS_OUT NATIVE_COMMAND "${EM_CFLAGS_OUT}")
+
 message("2:::::::::::::::::::::::::::::::::")
 message("${EM_CFLAGS_OUT}")
 message("3:::::::::::::::::::::::::::::::::")
-string(REPLACE "\n" "" EM_CFLAGS_OUT ${EM_CFLAGS_OUT})
-# string(REPLACE " " ";" EM_CFLAGS_OUT ${EM_CFLAGS_OUT})
+message("${EM_CFLAGS}")
 
 
-# string(REPLACE "-mllvm -disable-lsr" "" EM_CFLAGS_OUT ${EM_CFLAGS_OUT})
-# string(REPLACE "-mllvm -disable-lsr" "" EM_CFLAGS_OUT ${EM_CFLAGS_OUT})
 
-
-string(APPEND CMAKE_CXX_FLAGS " ${EM_CFLAGS_OUT} ${EMSCRIPTEN_CONFIG_FLAG} -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm")
-string(APPEND CMAKE_C_FLAGS " ${EM_CFLAGS_OUT} ${EMSCRIPTEN_CONFIG_FLAG} -sWASM_LEGACY_EXCEPTIONS=0 -sSUPPORT_LONGJMP=wasm")
 # string(APPEND CMAKE_DEPFILE_FLAGS_CXX "${EM_CFLAGS_OUT} --em-config ${CMAKE_SOURCE_DIR}/.emscripten")
-string(APPEND CMAKE_EXE_LINKER_FLAGS " -sWASM_LEGACY_EXCEPTIONS=0")
-# string(APPEND CMAKE_STATIC_LINKER_FLAGS "-sWASM_LEGACY_EXCEPTIONS=0")
-# string(APPEND CMAKE_MODULE_LINKER_FLAGS "-sWASM_LEGACY_EXCEPTIONS=0")
-string(APPEND CMAKE_SHARED_LINKER_FLAGS " -sWASM_LEGACY_EXCEPTIONS=0")
 
+list(JOIN EM_CFLAGS_OUT " " EM_CFLAGS_OUT)
+list(JOIN EM_CFLAGS " " EM_CFLAGS)
+
+string(APPEND CMAKE_CXX_FLAGS " ${EM_CFLAGS} ${EM_CFLAGS_OUT}")
+string(APPEND CMAKE_C_FLAGS " ${EM_CFLAGS} ${EM_CFLAGS_OUT}")
+
+message("4:::::::::::::::::::::::::::::::::")
+message("${CMAKE_CXX_FLAGS}")
 # 
 # add_compile_options(
 #   "SHELL:${EM_CFLAGS_OUT}"
