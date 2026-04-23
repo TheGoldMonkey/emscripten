@@ -67,10 +67,10 @@ set(CMAKE_CXX_SCAN_FOR_MODULES 0)
 execute_process(COMMAND "${CMAKE_CXX_COMPILER}" --cflags ${EM_CFLAGS} OUTPUT_VARIABLE EM_CFLAGS_OUT COMMAND_ECHO STDOUT)
 separate_arguments(EM_CFLAGS_OUT NATIVE_COMMAND "${EM_CFLAGS_OUT}")
 
-message("2:::::::::::::::::::::::::::::::::")
-message("${EM_CFLAGS_OUT}")
-message("3:::::::::::::::::::::::::::::::::")
-message("${EM_CFLAGS}")
+# message("2:::::::::::::::::::::::::::::::::")
+# message("${EM_CFLAGS_OUT}")
+# message("3:::::::::::::::::::::::::::::::::")
+# message("${EM_CFLAGS}")
 
 
 
@@ -82,9 +82,12 @@ list(JOIN EM_CFLAGS " " EM_CFLAGS)
 string(APPEND CMAKE_CXX_FLAGS " ${EM_CFLAGS} ${EM_CFLAGS_OUT}")
 string(APPEND CMAKE_C_FLAGS " ${EM_CFLAGS} ${EM_CFLAGS_OUT}")
 
-message("4:::::::::::::::::::::::::::::::::")
-message("${CMAKE_CXX_FLAGS}")
-# 
+# message("4:::::::::::::::::::::::::::::::::")
+# message("${CMAKE_CXX_FLAGS}")
+
+
+
+
 # add_compile_options(
 #   "SHELL:${EM_CFLAGS_OUT}"
 #   --em-config ${EMSCRIPTEN_CONFIG_PATH}

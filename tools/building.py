@@ -266,10 +266,10 @@ def lld_flags_for_executable(external_symbols):
 
   # The default for `--stack-first` is transitioning from disabled to
   # enabled.  So be explicit in all cases for now.
-  if settings.STACK_FIRST:
-    cmd.append('--stack-first')
-  else:
-    cmd.append('--no-stack-first')
+  # if settings.STACK_FIRST:
+  #   cmd.append('--stack-first')
+  # else:
+  #   cmd.append('--no-stack-first')
 
   if not settings.SIDE_MODULE:
     cmd.append('--table-base=%s' % settings.TABLE_BASE)
